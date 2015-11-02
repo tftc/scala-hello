@@ -1,6 +1,7 @@
 import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys._
 
+
 lazy val buildSettings = Seq(
   version := "0.0.1-SNAPSHOT",
   scalaVersion := "2.11.7",
@@ -12,7 +13,7 @@ lazy val versions = new {
   val finagle = "6.29.0"
   val logback = "1.0.13"
   val mybatis = "3.3.0"
-  val spring = "3.2.13.RELEASE"
+  val spring = "3.2.15.RELEASE"
   val mybatisSpring = "1.2.3"
 }
 
@@ -33,6 +34,7 @@ lazy val compilerOptions = scalacOptions ++= Seq(
   }
 )
 
+
 val baseSettings = Seq(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % versions.logback % "test",
@@ -42,11 +44,13 @@ val baseSettings = Seq(
   ),
   resolvers ++= Seq(
     Resolver.mavenLocal,
-    "qicheng maven" at "http://123.57.5.3:9092/nexus/content/groups/public",
-    "tiancai maven" at "http://123.57.227.107:8086/nexus/content/groups/tftiancai-nexus-group",
+    "qicheng" at "http://123.57.5.3:9092/nexus/content/groups/public",
+    "tiancai" at "http://123.57.227.107:8086/nexus/content/groups/tftiancai-nexus-group",
+    "oschina2" at "http://maven.oschina.net/content/groups/public",
     Resolver.sonatypeRepo("releases")
   ),
-  compilerOptions
+  compilerOptions,
+  javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 )
 
 lazy val cubeBuildSettings = baseSettings ++ buildSettings  ++ Seq(
@@ -74,7 +78,7 @@ lazy val finatraExample = (project in file("finatra-example"))
   )
 
 
-lazy val thriftExample = (project in file("thrift-example")).enablePlugins(ScroogeSBT)
+lazy val thriftExample = (project in file("thrift-example"))
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
@@ -83,11 +87,47 @@ lazy val thriftExample = (project in file("thrift-example")).enablePlugins(Scroo
       "org.mybatis" % "mybatis" % versions.mybatis,
       "org.mybatis" % "mybatis-spring" % versions.mybatisSpring,
       "org.springframework" % "spring-context" % versions.spring,
-      "redis.clients" % "jedis" % "2.7.2"
+      "redis.clients" % "jedis" % "2.7.2",
+      "joda-time" % "joda-time" % "2.8.2",
+      "ch.qos.logback" % "logback-classic" % versions.logback,
+      "org.slf4j" % "jcl-over-slf4j" % "1.7.12"
     )
-  ).settings(
-    scroogeThriftOutputFolder in Compile <<= baseDirectory {
-      base => base / "src/main/java2"
+  )
+  .disablePlugins(ScroogeSBT)
+  //hot reload
+  .settings(Revolver.settings:_*)
+  .settings(
+
+    mainClass in Revolver.reStart := Some("com.itiancai.passport.thrift.TestServer"),
+    javaOptions in Revolver.reStart += "-Dgalaxias.env=dev",
+    logLevel := sbt.Level.Info
+  )
+  .settings(
+    mainClass in assembly := Some("com.itiancai.passport.thrift.TestServer"),
+    assemblyMergeStrategy in assembly := {
+       case x if Assembly.isConfigFile(x) =>
+          MergeStrategy.concat
+       case PathList(ps @ _*) if Assembly.isReadme(ps.last) || Assembly.isLicenseFile(ps.last) =>
+          MergeStrategy.rename
+       case PathList("META-INF", xs @ _*) =>
+          (xs map {_.toLowerCase}) match {
+              case ("manifest.mf" :: Nil) | ("index.list" :: Nil) | ("dependencies" :: Nil) =>
+                  MergeStrategy.discard
+              case ps @ (x :: xs) if ps.last.endsWith(".sf") || ps.last.endsWith(".dsa") =>
+                  MergeStrategy.discard
+              case "plexus" :: xs =>
+                  MergeStrategy.discard
+              case "spring.tooling" :: xs =>
+                  MergeStrategy.discard
+              case "services" :: xs =>
+                  MergeStrategy.filterDistinctLines
+              case ("spring.schemas" :: Nil) | ("spring.handlers" :: Nil) =>
+                  MergeStrategy.filterDistinctLines
+              case _ => MergeStrategy.deduplicate
+          }
+        case "asm-license.txt" | "overview.html" =>
+          MergeStrategy.discard
+        case _ => MergeStrategy.deduplicate
     }
   )
 

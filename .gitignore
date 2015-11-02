@@ -2,3 +2,5 @@
 .idea/
 target/
 *.iml
+classes/
+.DS_Store

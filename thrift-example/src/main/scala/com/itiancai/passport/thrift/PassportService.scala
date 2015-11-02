@@ -6,21 +6,38 @@
  */
 package com.itiancai.passport.thrift
 
+import com.twitter.scrooge.{
+  LazyTProtocol,
+  TFieldBlob, ThriftService, ThriftStruct,
+  ThriftStructCodec, ThriftStructCodec3,
+  ThriftStructFieldInfo, ThriftResponse, ThriftUtil}
 import com.twitter.finagle.thrift.{Protocols, ThriftClientRequest, ThriftServiceIface}
-import com.twitter.scrooge.{TFieldBlob, ThriftResponse, ThriftService, ThriftStruct, ThriftStructCodec3, ThriftStructFieldInfo}
 import com.twitter.util.Future
+import java.nio.ByteBuffer
+import java.util.Arrays
 import org.apache.thrift.protocol._
-
-import scala.collection.Map
+import org.apache.thrift.transport.TTransport
+import org.apache.thrift.TApplicationException
+import org.apache.thrift.transport.TMemoryBuffer
 import scala.collection.immutable.{Map => immutable$Map}
-import scala.collection.mutable.{ArrayBuffer => mutable$ArrayBuffer, Buffer => mutable$Buffer, Builder, HashMap => mutable$HashMap, HashSet => mutable$HashSet}
+import scala.collection.mutable.{
+  Builder,
+  ArrayBuffer => mutable$ArrayBuffer, Buffer => mutable$Buffer,
+  HashMap => mutable$HashMap, HashSet => mutable$HashSet}
+import scala.collection.{Map, Set}
 import scala.language.higherKinds
 
 
 @javax.annotation.Generated(value = Array("com.twitter.scrooge.Compiler"))
 trait PassportService[+MM[_]] extends ThriftService {
   
-  def hi(word: String): MM[String]
+  def registerValidate(name: String, value: String): MM[com.itiancai.passport.thrift.PassportResult]
+  
+  def regist(user: com.itiancai.passport.thrift.User): MM[com.itiancai.passport.thrift.PassportResult]
+  
+  def login(user: com.itiancai.passport.thrift.UserLogin): MM[com.itiancai.passport.thrift.PassportResult]
+  
+  def userInfo(userId: Long): MM[com.itiancai.passport.thrift.PassportResult]
 }
 
 
@@ -28,12 +45,18 @@ trait PassportService[+MM[_]] extends ThriftService {
 object PassportService { self =>
 
   case class ServiceIface(
-      hi : com.twitter.finagle.Service[self.Hi.Args, self.Hi.Result]
+      registerValidate : com.twitter.finagle.Service[self.RegisterValidate.Args, self.RegisterValidate.Result],
+      regist : com.twitter.finagle.Service[self.Regist.Args, self.Regist.Result],
+      login : com.twitter.finagle.Service[self.Login.Args, self.Login.Result],
+      userInfo : com.twitter.finagle.Service[self.UserInfo.Args, self.UserInfo.Result]
   ) extends __ServiceIface
 
   // This is needed to support service inheritance.
   trait __ServiceIface  {
-    def hi : com.twitter.finagle.Service[self.Hi.Args, self.Hi.Result]
+    def registerValidate : com.twitter.finagle.Service[self.RegisterValidate.Args, self.RegisterValidate.Result]
+    def regist : com.twitter.finagle.Service[self.Regist.Args, self.Regist.Result]
+    def login : com.twitter.finagle.Service[self.Login.Args, self.Login.Result]
+    def userInfo : com.twitter.finagle.Service[self.UserInfo.Args, self.UserInfo.Result]
   }
 
   implicit object ServiceIfaceBuilder
@@ -44,16 +67,31 @@ object PassportService { self =>
         stats: com.twitter.finagle.stats.StatsReceiver
       ): ServiceIface =
         new ServiceIface(
-          hi = ThriftServiceIface(self.Hi, binaryService, pf, stats)
+          registerValidate = ThriftServiceIface(self.RegisterValidate, binaryService, pf, stats),
+          regist = ThriftServiceIface(self.Regist, binaryService, pf, stats),
+          login = ThriftServiceIface(self.Login, binaryService, pf, stats),
+          userInfo = ThriftServiceIface(self.UserInfo, binaryService, pf, stats)
       )
   }
 
   class MethodIface(serviceIface: __ServiceIface)
     extends PassportService[Future] {
-    private[this] val __hi_service =
-      ThriftServiceIface.resultFilter(self.Hi) andThen serviceIface.hi
-    def hi(word: String): Future[String] =
-      __hi_service(self.Hi.Args(word))
+    private[this] val __registerValidate_service =
+      ThriftServiceIface.resultFilter(self.RegisterValidate) andThen serviceIface.registerValidate
+    def registerValidate(name: String, value: String): Future[com.itiancai.passport.thrift.PassportResult] =
+      __registerValidate_service(self.RegisterValidate.Args(name, value))
+    private[this] val __regist_service =
+      ThriftServiceIface.resultFilter(self.Regist) andThen serviceIface.regist
+    def regist(user: com.itiancai.passport.thrift.User): Future[com.itiancai.passport.thrift.PassportResult] =
+      __regist_service(self.Regist.Args(user))
+    private[this] val __login_service =
+      ThriftServiceIface.resultFilter(self.Login) andThen serviceIface.login
+    def login(user: com.itiancai.passport.thrift.UserLogin): Future[com.itiancai.passport.thrift.PassportResult] =
+      __login_service(self.Login.Args(user))
+    private[this] val __userInfo_service =
+      ThriftServiceIface.resultFilter(self.UserInfo) andThen serviceIface.userInfo
+    def userInfo(userId: Long): Future[com.itiancai.passport.thrift.PassportResult] =
+      __userInfo_service(self.UserInfo.Args(userId))
   }
 
   implicit object MethodIfaceBuilder
@@ -62,23 +100,35 @@ object PassportService { self =>
       new MethodIface(serviceIface)
   }
 
-  object Hi extends com.twitter.scrooge.ThriftMethod {
+  object RegisterValidate extends com.twitter.scrooge.ThriftMethod {
     
     object Args extends ThriftStructCodec3[Args] {
       private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
-      val Struct = new TStruct("hi_args")
-      val WordField = new TField("word", TType.STRING, 1)
-      val WordFieldManifest = implicitly[Manifest[String]]
+      val Struct = new TStruct("registerValidate_args")
+      val NameField = new TField("name", TType.STRING, 1)
+      val NameFieldManifest = implicitly[Manifest[String]]
+      val ValueField = new TField("value", TType.STRING, 2)
+      val ValueFieldManifest = implicitly[Manifest[String]]
     
       /**
        * Field information in declaration order.
        */
       lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
         new ThriftStructFieldInfo(
-          WordField,
+          NameField,
           false,
           false,
-          WordFieldManifest,
+          NameFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        ),
+        new ThriftStructFieldInfo(
+          ValueField,
+          false,
+          false,
+          ValueFieldManifest,
           _root_.scala.None,
           _root_.scala.None,
           immutable$Map.empty[String, String],
@@ -97,9 +147,14 @@ object PassportService { self =>
     
       def withoutPassthroughFields(original: Args): Args =
         new Args(
-          word =
+          name =
             {
-              val field = original.word
+              val field = original.name
+              field
+            },
+          value =
+            {
+              val field = original.value
               field
             }
         )
@@ -109,7 +164,8 @@ object PassportService { self =>
       }
     
       override def decode(_iprot: TProtocol): Args = {
-        var word: String = null
+        var name: String = null
+        var value: String = null
         var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
         var _done = false
     
@@ -123,11 +179,24 @@ object PassportService { self =>
               case 1 =>
                 _field.`type` match {
                   case TType.STRING =>
-                    word = readWordValue(_iprot)
+                    name = readNameValue(_iprot)
                   case _actualType =>
                     val _expectedType = TType.STRING
                     throw new TProtocolException(
-                      "Received wrong type for field 'word' (expected=%s, actual=%s).".format(
+                      "Received wrong type for field 'name' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case 2 =>
+                _field.`type` match {
+                  case TType.STRING =>
+                    value = readValueValue(_iprot)
+                  case _actualType =>
+                    val _expectedType = TType.STRING
+                    throw new TProtocolException(
+                      "Received wrong type for field 'value' (expected=%s, actual=%s).".format(
                         ttypeToString(_expectedType),
                         ttypeToString(_actualType)
                       )
@@ -144,7 +213,8 @@ object PassportService { self =>
         _iprot.readStructEnd()
     
         new Args(
-          word,
+          name,
+          value,
           if (_passthroughFields == null)
             NoPassthroughFields
           else
@@ -153,55 +223,76 @@ object PassportService { self =>
       }
     
       def apply(
-        word: String
+        name: String,
+        value: String
       ): Args =
         new Args(
-          word
+          name,
+          value
         )
     
-      def unapply(_item: Args): _root_.scala.Option[String] = _root_.scala.Some(_item.word)
+      def unapply(_item: Args): _root_.scala.Option[scala.Product2[String, String]] = _root_.scala.Some(_item)
     
     
-      @inline private def readWordValue(_iprot: TProtocol): String = {
+      @inline private def readNameValue(_iprot: TProtocol): String = {
         _iprot.readString()
       }
     
-      @inline private def writeWordField(word_item: String, _oprot: TProtocol): Unit = {
-        _oprot.writeFieldBegin(WordField)
-        writeWordValue(word_item, _oprot)
+      @inline private def writeNameField(name_item: String, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(NameField)
+        writeNameValue(name_item, _oprot)
         _oprot.writeFieldEnd()
       }
     
-      @inline private def writeWordValue(word_item: String, _oprot: TProtocol): Unit = {
-        _oprot.writeString(word_item)
+      @inline private def writeNameValue(name_item: String, _oprot: TProtocol): Unit = {
+        _oprot.writeString(name_item)
+      }
+    
+      @inline private def readValueValue(_iprot: TProtocol): String = {
+        _iprot.readString()
+      }
+    
+      @inline private def writeValueField(value_item: String, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(ValueField)
+        writeValueValue(value_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeValueValue(value_item: String, _oprot: TProtocol): Unit = {
+        _oprot.writeString(value_item)
       }
     
     
     }
     
     class Args(
-        val word: String,
+        val name: String,
+        val value: String,
         val _passthroughFields: immutable$Map[Short, TFieldBlob])
       extends ThriftStruct
-      with scala.Product1[String]
+      with scala.Product2[String, String]
       with java.io.Serializable
     {
       import Args._
       def this(
-        word: String
+        name: String,
+        value: String
       ) = this(
-        word,
+        name,
+        value,
         Map.empty
       )
     
-      def _1 = word
+      def _1 = name
+      def _2 = value
     
     
     
       override def write(_oprot: TProtocol): Unit = {
         Args.validate(this)
         _oprot.writeStructBegin(Struct)
-        if (word ne null) writeWordField(word, _oprot)
+        if (name ne null) writeNameField(name, _oprot)
+        if (value ne null) writeValueField(value, _oprot)
         if (_passthroughFields.nonEmpty) {
           _passthroughFields.values.foreach { _.write(_oprot) }
         }
@@ -210,11 +301,13 @@ object PassportService { self =>
       }
     
       def copy(
-        word: String = this.word,
+        name: String = this.name,
+        value: String = this.value,
         _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
       ): Args =
         new Args(
-          word,
+          name,
+          value,
           _passthroughFields
         )
     
@@ -230,23 +323,24 @@ object PassportService { self =>
       override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
     
     
-      override def productArity: Int = 1
+      override def productArity: Int = 2
     
       override def productElement(n: Int): Any = n match {
-        case 0 => this.word
+        case 0 => this.name
+        case 1 => this.value
         case _ => throw new IndexOutOfBoundsException(n.toString)
       }
     
       override def productPrefix: String = "Args"
     }
 
-    type SuccessType = String
+    type SuccessType = com.itiancai.passport.thrift.PassportResult
     
     object Result extends ThriftStructCodec3[Result] {
       private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
-      val Struct = new TStruct("hi_result")
-      val SuccessField = new TField("success", TType.STRING, 0)
-      val SuccessFieldManifest = implicitly[Manifest[String]]
+      val Struct = new TStruct("registerValidate_result")
+      val SuccessField = new TField("success", TType.STRUCT, 0)
+      val SuccessFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.PassportResult]]
     
       /**
        * Field information in declaration order.
@@ -279,7 +373,7 @@ object PassportService { self =>
             {
               val field = original.success
               field.map { field =>
-                field
+                com.itiancai.passport.thrift.PassportResult.withoutPassthroughFields(field)
               }
             }
         )
@@ -289,7 +383,7 @@ object PassportService { self =>
       }
     
       override def decode(_iprot: TProtocol): Result = {
-        var success: _root_.scala.Option[String] = _root_.scala.None
+        var success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
         var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
         var _done = false
     
@@ -302,10 +396,10 @@ object PassportService { self =>
             _field.id match {
               case 0 =>
                 _field.`type` match {
-                  case TType.STRING =>
+                  case TType.STRUCT =>
                     success = _root_.scala.Some(readSuccessValue(_iprot))
                   case _actualType =>
-                    val _expectedType = TType.STRING
+                    val _expectedType = TType.STRUCT
                     throw new TProtocolException(
                       "Received wrong type for field 'success' (expected=%s, actual=%s).".format(
                         ttypeToString(_expectedType),
@@ -333,42 +427,42 @@ object PassportService { self =>
       }
     
       def apply(
-        success: _root_.scala.Option[String] = _root_.scala.None
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
       ): Result =
         new Result(
           success
         )
     
-      def unapply(_item: Result): _root_.scala.Option[_root_.scala.Option[String]] = _root_.scala.Some(_item.success)
+      def unapply(_item: Result): _root_.scala.Option[_root_.scala.Option[com.itiancai.passport.thrift.PassportResult]] = _root_.scala.Some(_item.success)
     
     
-      @inline private def readSuccessValue(_iprot: TProtocol): String = {
-        _iprot.readString()
+      @inline private def readSuccessValue(_iprot: TProtocol): com.itiancai.passport.thrift.PassportResult = {
+        com.itiancai.passport.thrift.PassportResult.decode(_iprot)
       }
     
-      @inline private def writeSuccessField(success_item: String, _oprot: TProtocol): Unit = {
+      @inline private def writeSuccessField(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
         _oprot.writeFieldBegin(SuccessField)
         writeSuccessValue(success_item, _oprot)
         _oprot.writeFieldEnd()
       }
     
-      @inline private def writeSuccessValue(success_item: String, _oprot: TProtocol): Unit = {
-        _oprot.writeString(success_item)
+      @inline private def writeSuccessValue(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        success_item.write(_oprot)
       }
     
     
     }
     
     class Result(
-        val success: _root_.scala.Option[String],
+        val success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult],
         val _passthroughFields: immutable$Map[Short, TFieldBlob])
-      extends ThriftResponse[String] with ThriftStruct
-      with scala.Product1[Option[String]]
+      extends ThriftResponse[com.itiancai.passport.thrift.PassportResult] with ThriftStruct
+      with scala.Product1[Option[com.itiancai.passport.thrift.PassportResult]]
       with java.io.Serializable
     {
       import Result._
       def this(
-        success: _root_.scala.Option[String] = _root_.scala.None
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
       ) = this(
         success,
         Map.empty
@@ -376,7 +470,7 @@ object PassportService { self =>
     
       def _1 = success
     
-      def successField: Option[String] = success
+      def successField: Option[com.itiancai.passport.thrift.PassportResult] = success
       def exceptionFields: Iterable[Option[com.twitter.scrooge.ThriftException]] = Seq()
     
     
@@ -392,7 +486,7 @@ object PassportService { self =>
       }
     
       def copy(
-        success: _root_.scala.Option[String] = this.success,
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = this.success,
         _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
       ): Result =
         new Result(
@@ -422,7 +516,7 @@ object PassportService { self =>
       override def productPrefix: String = "Result"
     }
 
-    val name = "hi"
+    val name = "registerValidate"
     val serviceName = "PassportService"
     val argsCodec = Args
     val responseCodec = Result
@@ -430,16 +524,1144 @@ object PassportService { self =>
   }
 
   // Compatibility aliases.
-  val hi$args = Hi.Args
-  type hi$args = Hi.Args
+  val registerValidate$args = RegisterValidate.Args
+  type registerValidate$args = RegisterValidate.Args
 
-  val hi$result = Hi.Result
-  type hi$result = Hi.Result
+  val registerValidate$result = RegisterValidate.Result
+  type registerValidate$result = RegisterValidate.Result
+
+  object Regist extends com.twitter.scrooge.ThriftMethod {
+    
+    object Args extends ThriftStructCodec3[Args] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("regist_args")
+      val UserField = new TField("user", TType.STRUCT, 1)
+      val UserFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.User]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          UserField,
+          false,
+          false,
+          UserFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Args): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Args): Args =
+        new Args(
+          user =
+            {
+              val field = original.user
+              com.itiancai.passport.thrift.User.withoutPassthroughFields(field)
+            }
+        )
+    
+      override def encode(_item: Args, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Args = {
+        var user: com.itiancai.passport.thrift.User = null
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 1 =>
+                _field.`type` match {
+                  case TType.STRUCT =>
+                    user = readUserValue(_iprot)
+                  case _actualType =>
+                    val _expectedType = TType.STRUCT
+                    throw new TProtocolException(
+                      "Received wrong type for field 'user' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Args(
+          user,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        user: com.itiancai.passport.thrift.User
+      ): Args =
+        new Args(
+          user
+        )
+    
+      def unapply(_item: Args): _root_.scala.Option[com.itiancai.passport.thrift.User] = _root_.scala.Some(_item.user)
+    
+    
+      @inline private def readUserValue(_iprot: TProtocol): com.itiancai.passport.thrift.User = {
+        com.itiancai.passport.thrift.User.decode(_iprot)
+      }
+    
+      @inline private def writeUserField(user_item: com.itiancai.passport.thrift.User, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(UserField)
+        writeUserValue(user_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeUserValue(user_item: com.itiancai.passport.thrift.User, _oprot: TProtocol): Unit = {
+        user_item.write(_oprot)
+      }
+    
+    
+    }
+    
+    class Args(
+        val user: com.itiancai.passport.thrift.User,
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftStruct
+      with scala.Product1[com.itiancai.passport.thrift.User]
+      with java.io.Serializable
+    {
+      import Args._
+      def this(
+        user: com.itiancai.passport.thrift.User
+      ) = this(
+        user,
+        Map.empty
+      )
+    
+      def _1 = user
+    
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Args.validate(this)
+        _oprot.writeStructBegin(Struct)
+        if (user ne null) writeUserField(user, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        user: com.itiancai.passport.thrift.User = this.user,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Args =
+        new Args(
+          user,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Args]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Args]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.user
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Args"
+    }
+
+    type SuccessType = com.itiancai.passport.thrift.PassportResult
+    
+    object Result extends ThriftStructCodec3[Result] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("regist_result")
+      val SuccessField = new TField("success", TType.STRUCT, 0)
+      val SuccessFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.PassportResult]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          SuccessField,
+          true,
+          false,
+          SuccessFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Result): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Result): Result =
+        new Result(
+          success =
+            {
+              val field = original.success
+              field.map { field =>
+                com.itiancai.passport.thrift.PassportResult.withoutPassthroughFields(field)
+              }
+            }
+        )
+    
+      override def encode(_item: Result, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Result = {
+        var success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 0 =>
+                _field.`type` match {
+                  case TType.STRUCT =>
+                    success = _root_.scala.Some(readSuccessValue(_iprot))
+                  case _actualType =>
+                    val _expectedType = TType.STRUCT
+                    throw new TProtocolException(
+                      "Received wrong type for field 'success' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Result(
+          success,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ): Result =
+        new Result(
+          success
+        )
+    
+      def unapply(_item: Result): _root_.scala.Option[_root_.scala.Option[com.itiancai.passport.thrift.PassportResult]] = _root_.scala.Some(_item.success)
+    
+    
+      @inline private def readSuccessValue(_iprot: TProtocol): com.itiancai.passport.thrift.PassportResult = {
+        com.itiancai.passport.thrift.PassportResult.decode(_iprot)
+      }
+    
+      @inline private def writeSuccessField(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(SuccessField)
+        writeSuccessValue(success_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeSuccessValue(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        success_item.write(_oprot)
+      }
+    
+    
+    }
+    
+    class Result(
+        val success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult],
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftResponse[com.itiancai.passport.thrift.PassportResult] with ThriftStruct
+      with scala.Product1[Option[com.itiancai.passport.thrift.PassportResult]]
+      with java.io.Serializable
+    {
+      import Result._
+      def this(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ) = this(
+        success,
+        Map.empty
+      )
+    
+      def _1 = success
+    
+      def successField: Option[com.itiancai.passport.thrift.PassportResult] = success
+      def exceptionFields: Iterable[Option[com.twitter.scrooge.ThriftException]] = Seq()
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Result.validate(this)
+        _oprot.writeStructBegin(Struct)
+        if (success.isDefined) writeSuccessField(success.get, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = this.success,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Result =
+        new Result(
+          success,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Result]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Result]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.success
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Result"
+    }
+
+    val name = "regist"
+    val serviceName = "PassportService"
+    val argsCodec = Args
+    val responseCodec = Result
+    val oneway = false
+  }
+
+  // Compatibility aliases.
+  val regist$args = Regist.Args
+  type regist$args = Regist.Args
+
+  val regist$result = Regist.Result
+  type regist$result = Regist.Result
+
+  object Login extends com.twitter.scrooge.ThriftMethod {
+    
+    object Args extends ThriftStructCodec3[Args] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("login_args")
+      val UserField = new TField("user", TType.STRUCT, 1)
+      val UserFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.UserLogin]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          UserField,
+          false,
+          false,
+          UserFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Args): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Args): Args =
+        new Args(
+          user =
+            {
+              val field = original.user
+              com.itiancai.passport.thrift.UserLogin.withoutPassthroughFields(field)
+            }
+        )
+    
+      override def encode(_item: Args, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Args = {
+        var user: com.itiancai.passport.thrift.UserLogin = null
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 1 =>
+                _field.`type` match {
+                  case TType.STRUCT =>
+                    user = readUserValue(_iprot)
+                  case _actualType =>
+                    val _expectedType = TType.STRUCT
+                    throw new TProtocolException(
+                      "Received wrong type for field 'user' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Args(
+          user,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        user: com.itiancai.passport.thrift.UserLogin
+      ): Args =
+        new Args(
+          user
+        )
+    
+      def unapply(_item: Args): _root_.scala.Option[com.itiancai.passport.thrift.UserLogin] = _root_.scala.Some(_item.user)
+    
+    
+      @inline private def readUserValue(_iprot: TProtocol): com.itiancai.passport.thrift.UserLogin = {
+        com.itiancai.passport.thrift.UserLogin.decode(_iprot)
+      }
+    
+      @inline private def writeUserField(user_item: com.itiancai.passport.thrift.UserLogin, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(UserField)
+        writeUserValue(user_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeUserValue(user_item: com.itiancai.passport.thrift.UserLogin, _oprot: TProtocol): Unit = {
+        user_item.write(_oprot)
+      }
+    
+    
+    }
+    
+    class Args(
+        val user: com.itiancai.passport.thrift.UserLogin,
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftStruct
+      with scala.Product1[com.itiancai.passport.thrift.UserLogin]
+      with java.io.Serializable
+    {
+      import Args._
+      def this(
+        user: com.itiancai.passport.thrift.UserLogin
+      ) = this(
+        user,
+        Map.empty
+      )
+    
+      def _1 = user
+    
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Args.validate(this)
+        _oprot.writeStructBegin(Struct)
+        if (user ne null) writeUserField(user, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        user: com.itiancai.passport.thrift.UserLogin = this.user,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Args =
+        new Args(
+          user,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Args]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Args]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.user
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Args"
+    }
+
+    type SuccessType = com.itiancai.passport.thrift.PassportResult
+    
+    object Result extends ThriftStructCodec3[Result] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("login_result")
+      val SuccessField = new TField("success", TType.STRUCT, 0)
+      val SuccessFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.PassportResult]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          SuccessField,
+          true,
+          false,
+          SuccessFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Result): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Result): Result =
+        new Result(
+          success =
+            {
+              val field = original.success
+              field.map { field =>
+                com.itiancai.passport.thrift.PassportResult.withoutPassthroughFields(field)
+              }
+            }
+        )
+    
+      override def encode(_item: Result, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Result = {
+        var success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 0 =>
+                _field.`type` match {
+                  case TType.STRUCT =>
+                    success = _root_.scala.Some(readSuccessValue(_iprot))
+                  case _actualType =>
+                    val _expectedType = TType.STRUCT
+                    throw new TProtocolException(
+                      "Received wrong type for field 'success' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Result(
+          success,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ): Result =
+        new Result(
+          success
+        )
+    
+      def unapply(_item: Result): _root_.scala.Option[_root_.scala.Option[com.itiancai.passport.thrift.PassportResult]] = _root_.scala.Some(_item.success)
+    
+    
+      @inline private def readSuccessValue(_iprot: TProtocol): com.itiancai.passport.thrift.PassportResult = {
+        com.itiancai.passport.thrift.PassportResult.decode(_iprot)
+      }
+    
+      @inline private def writeSuccessField(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(SuccessField)
+        writeSuccessValue(success_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeSuccessValue(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        success_item.write(_oprot)
+      }
+    
+    
+    }
+    
+    class Result(
+        val success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult],
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftResponse[com.itiancai.passport.thrift.PassportResult] with ThriftStruct
+      with scala.Product1[Option[com.itiancai.passport.thrift.PassportResult]]
+      with java.io.Serializable
+    {
+      import Result._
+      def this(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ) = this(
+        success,
+        Map.empty
+      )
+    
+      def _1 = success
+    
+      def successField: Option[com.itiancai.passport.thrift.PassportResult] = success
+      def exceptionFields: Iterable[Option[com.twitter.scrooge.ThriftException]] = Seq()
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Result.validate(this)
+        _oprot.writeStructBegin(Struct)
+        if (success.isDefined) writeSuccessField(success.get, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = this.success,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Result =
+        new Result(
+          success,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Result]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Result]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.success
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Result"
+    }
+
+    val name = "login"
+    val serviceName = "PassportService"
+    val argsCodec = Args
+    val responseCodec = Result
+    val oneway = false
+  }
+
+  // Compatibility aliases.
+  val login$args = Login.Args
+  type login$args = Login.Args
+
+  val login$result = Login.Result
+  type login$result = Login.Result
+
+  object UserInfo extends com.twitter.scrooge.ThriftMethod {
+    
+    object Args extends ThriftStructCodec3[Args] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("userInfo_args")
+      val UserIdField = new TField("userId", TType.I64, 1)
+      val UserIdFieldManifest = implicitly[Manifest[Long]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          UserIdField,
+          false,
+          false,
+          UserIdFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Args): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Args): Args =
+        new Args(
+          userId =
+            {
+              val field = original.userId
+              field
+            }
+        )
+    
+      override def encode(_item: Args, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Args = {
+        var userId: Long = 0L
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 1 =>
+                _field.`type` match {
+                  case TType.I64 =>
+                    userId = readUserIdValue(_iprot)
+                  case _actualType =>
+                    val _expectedType = TType.I64
+                    throw new TProtocolException(
+                      "Received wrong type for field 'userId' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Args(
+          userId,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        userId: Long
+      ): Args =
+        new Args(
+          userId
+        )
+    
+      def unapply(_item: Args): _root_.scala.Option[Long] = _root_.scala.Some(_item.userId)
+    
+    
+      @inline private def readUserIdValue(_iprot: TProtocol): Long = {
+        _iprot.readI64()
+      }
+    
+      @inline private def writeUserIdField(userId_item: Long, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(UserIdField)
+        writeUserIdValue(userId_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeUserIdValue(userId_item: Long, _oprot: TProtocol): Unit = {
+        _oprot.writeI64(userId_item)
+      }
+    
+    
+    }
+    
+    class Args(
+        val userId: Long,
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftStruct
+      with scala.Product1[Long]
+      with java.io.Serializable
+    {
+      import Args._
+      def this(
+        userId: Long
+      ) = this(
+        userId,
+        Map.empty
+      )
+    
+      def _1 = userId
+    
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Args.validate(this)
+        _oprot.writeStructBegin(Struct)
+        writeUserIdField(userId, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        userId: Long = this.userId,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Args =
+        new Args(
+          userId,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Args]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Args]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.userId
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Args"
+    }
+
+    type SuccessType = com.itiancai.passport.thrift.PassportResult
+    
+    object Result extends ThriftStructCodec3[Result] {
+      private val NoPassthroughFields = immutable$Map.empty[Short, TFieldBlob]
+      val Struct = new TStruct("userInfo_result")
+      val SuccessField = new TField("success", TType.STRUCT, 0)
+      val SuccessFieldManifest = implicitly[Manifest[com.itiancai.passport.thrift.PassportResult]]
+    
+      /**
+       * Field information in declaration order.
+       */
+      lazy val fieldInfos: scala.List[ThriftStructFieldInfo] = scala.List[ThriftStructFieldInfo](
+        new ThriftStructFieldInfo(
+          SuccessField,
+          true,
+          false,
+          SuccessFieldManifest,
+          _root_.scala.None,
+          _root_.scala.None,
+          immutable$Map.empty[String, String],
+          immutable$Map.empty[String, String]
+        )
+      )
+    
+      lazy val structAnnotations: immutable$Map[String, String] =
+        immutable$Map.empty[String, String]
+    
+      /**
+       * Checks that all required fields are non-null.
+       */
+      def validate(_item: Result): Unit = {
+      }
+    
+      def withoutPassthroughFields(original: Result): Result =
+        new Result(
+          success =
+            {
+              val field = original.success
+              field.map { field =>
+                com.itiancai.passport.thrift.PassportResult.withoutPassthroughFields(field)
+              }
+            }
+        )
+    
+      override def encode(_item: Result, _oproto: TProtocol): Unit = {
+        _item.write(_oproto)
+      }
+    
+      override def decode(_iprot: TProtocol): Result = {
+        var success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+        var _passthroughFields: Builder[(Short, TFieldBlob), immutable$Map[Short, TFieldBlob]] = null
+        var _done = false
+    
+        _iprot.readStructBegin()
+        while (!_done) {
+          val _field = _iprot.readFieldBegin()
+          if (_field.`type` == TType.STOP) {
+            _done = true
+          } else {
+            _field.id match {
+              case 0 =>
+                _field.`type` match {
+                  case TType.STRUCT =>
+                    success = _root_.scala.Some(readSuccessValue(_iprot))
+                  case _actualType =>
+                    val _expectedType = TType.STRUCT
+                    throw new TProtocolException(
+                      "Received wrong type for field 'success' (expected=%s, actual=%s).".format(
+                        ttypeToString(_expectedType),
+                        ttypeToString(_actualType)
+                      )
+                    )
+                }
+              case _ =>
+                if (_passthroughFields == null)
+                  _passthroughFields = immutable$Map.newBuilder[Short, TFieldBlob]
+                _passthroughFields += (_field.id -> TFieldBlob.read(_field, _iprot))
+            }
+            _iprot.readFieldEnd()
+          }
+        }
+        _iprot.readStructEnd()
+    
+        new Result(
+          success,
+          if (_passthroughFields == null)
+            NoPassthroughFields
+          else
+            _passthroughFields.result()
+        )
+      }
+    
+      def apply(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ): Result =
+        new Result(
+          success
+        )
+    
+      def unapply(_item: Result): _root_.scala.Option[_root_.scala.Option[com.itiancai.passport.thrift.PassportResult]] = _root_.scala.Some(_item.success)
+    
+    
+      @inline private def readSuccessValue(_iprot: TProtocol): com.itiancai.passport.thrift.PassportResult = {
+        com.itiancai.passport.thrift.PassportResult.decode(_iprot)
+      }
+    
+      @inline private def writeSuccessField(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        _oprot.writeFieldBegin(SuccessField)
+        writeSuccessValue(success_item, _oprot)
+        _oprot.writeFieldEnd()
+      }
+    
+      @inline private def writeSuccessValue(success_item: com.itiancai.passport.thrift.PassportResult, _oprot: TProtocol): Unit = {
+        success_item.write(_oprot)
+      }
+    
+    
+    }
+    
+    class Result(
+        val success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult],
+        val _passthroughFields: immutable$Map[Short, TFieldBlob])
+      extends ThriftResponse[com.itiancai.passport.thrift.PassportResult] with ThriftStruct
+      with scala.Product1[Option[com.itiancai.passport.thrift.PassportResult]]
+      with java.io.Serializable
+    {
+      import Result._
+      def this(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = _root_.scala.None
+      ) = this(
+        success,
+        Map.empty
+      )
+    
+      def _1 = success
+    
+      def successField: Option[com.itiancai.passport.thrift.PassportResult] = success
+      def exceptionFields: Iterable[Option[com.twitter.scrooge.ThriftException]] = Seq()
+    
+    
+      override def write(_oprot: TProtocol): Unit = {
+        Result.validate(this)
+        _oprot.writeStructBegin(Struct)
+        if (success.isDefined) writeSuccessField(success.get, _oprot)
+        if (_passthroughFields.nonEmpty) {
+          _passthroughFields.values.foreach { _.write(_oprot) }
+        }
+        _oprot.writeFieldStop()
+        _oprot.writeStructEnd()
+      }
+    
+      def copy(
+        success: _root_.scala.Option[com.itiancai.passport.thrift.PassportResult] = this.success,
+        _passthroughFields: immutable$Map[Short, TFieldBlob] = this._passthroughFields
+      ): Result =
+        new Result(
+          success,
+          _passthroughFields
+        )
+    
+      override def canEqual(other: Any): Boolean = other.isInstanceOf[Result]
+    
+      override def equals(other: Any): Boolean =
+        canEqual(other) &&
+          _root_.scala.runtime.ScalaRunTime._equals(this, other) &&
+          _passthroughFields == other.asInstanceOf[Result]._passthroughFields
+    
+      override def hashCode: Int = _root_.scala.runtime.ScalaRunTime._hashCode(this)
+    
+      override def toString: String = _root_.scala.runtime.ScalaRunTime._toString(this)
+    
+    
+      override def productArity: Int = 1
+    
+      override def productElement(n: Int): Any = n match {
+        case 0 => this.success
+        case _ => throw new IndexOutOfBoundsException(n.toString)
+      }
+    
+      override def productPrefix: String = "Result"
+    }
+
+    val name = "userInfo"
+    val serviceName = "PassportService"
+    val argsCodec = Args
+    val responseCodec = Result
+    val oneway = false
+  }
+
+  // Compatibility aliases.
+  val userInfo$args = UserInfo.Args
+  type userInfo$args = UserInfo.Args
+
+  val userInfo$result = UserInfo.Result
+  type userInfo$result = UserInfo.Result
 
 
   trait FutureIface extends PassportService[Future] {
     
-    def hi(word: String): Future[String]
+    def registerValidate(name: String, value: String): Future[com.itiancai.passport.thrift.PassportResult]
+    
+    def regist(user: com.itiancai.passport.thrift.User): Future[com.itiancai.passport.thrift.PassportResult]
+    
+    def login(user: com.itiancai.passport.thrift.UserLogin): Future[com.itiancai.passport.thrift.PassportResult]
+    
+    def userInfo(userId: Long): Future[com.itiancai.passport.thrift.PassportResult]
   }
 
   class FinagledClient(

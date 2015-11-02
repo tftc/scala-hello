@@ -13,8 +13,7 @@ object TestServer extends App{
 
     val passService:PassportServiceImpl = context.getBean(classOf[PassportServiceImpl])
 
-    val service = Thrift.serveIface("localhost:9999", passService)
-
+    val service = Thrift.serveIface("0.0.0.0:9999", passService)
     Await.ready(service)
 
 }

@@ -6,17 +6,19 @@
  */
 package com.itiancai.passport.thrift
 
-import java.util.Arrays
-
 import com.twitter.finagle.Thrift
 import com.twitter.finagle.stats.{NullStatsReceiver, StatsReceiver}
-import com.twitter.scrooge.{TReusableMemoryTransport, ThriftStruct}
+import com.twitter.scrooge.{ThriftStruct, TReusableMemoryTransport}
 import com.twitter.util.Future
-import org.apache.thrift.TApplicationException
+import java.nio.ByteBuffer
+import java.util.Arrays
 import org.apache.thrift.protocol._
+import org.apache.thrift.TApplicationException
 import org.apache.thrift.transport.TMemoryInputTransport
+import scala.collection.mutable.{
+  ArrayBuffer => mutable$ArrayBuffer, HashMap => mutable$HashMap}
+import scala.collection.{Map, Set}
 
-import scala.collection.mutable.{ArrayBuffer => mutable$ArrayBuffer, HashMap => mutable$HashMap}
 import scala.language.higherKinds
 
 
@@ -121,23 +123,86 @@ class PassportService$FinagleService(
 
   // ---- end boilerplate.
 
-  addFunction("hi", { (iprot: TProtocol, seqid: Int) =>
+  addFunction("registerValidate", { (iprot: TProtocol, seqid: Int) =>
     try {
-      val args = Hi.Args.decode(iprot)
+      val args = RegisterValidate.Args.decode(iprot)
       iprot.readMessageEnd()
       (try {
-        iface.hi(args.word)
+        iface.registerValidate(args.name, args.value)
       } catch {
         case e: Exception => Future.exception(e)
-      }) flatMap { value: String =>
-        reply("hi", seqid, Hi.Result(success = Some(value)))
+      }) flatMap { value: com.itiancai.passport.thrift.PassportResult =>
+        reply("registerValidate", seqid, RegisterValidate.Result(success = Some(value)))
       } rescue {
         case e => Future.exception(e)
       }
     } catch {
       case e: TProtocolException => {
         iprot.readMessageEnd()
-        exception("hi", seqid, TApplicationException.PROTOCOL_ERROR, e.getMessage)
+        exception("registerValidate", seqid, TApplicationException.PROTOCOL_ERROR, e.getMessage)
+      }
+      case e: Exception => Future.exception(e)
+    }
+  })
+  addFunction("regist", { (iprot: TProtocol, seqid: Int) =>
+    try {
+      val args = Regist.Args.decode(iprot)
+      iprot.readMessageEnd()
+      (try {
+        iface.regist(args.user)
+      } catch {
+        case e: Exception => Future.exception(e)
+      }) flatMap { value: com.itiancai.passport.thrift.PassportResult =>
+        reply("regist", seqid, Regist.Result(success = Some(value)))
+      } rescue {
+        case e => Future.exception(e)
+      }
+    } catch {
+      case e: TProtocolException => {
+        iprot.readMessageEnd()
+        exception("regist", seqid, TApplicationException.PROTOCOL_ERROR, e.getMessage)
+      }
+      case e: Exception => Future.exception(e)
+    }
+  })
+  addFunction("login", { (iprot: TProtocol, seqid: Int) =>
+    try {
+      val args = Login.Args.decode(iprot)
+      iprot.readMessageEnd()
+      (try {
+        iface.login(args.user)
+      } catch {
+        case e: Exception => Future.exception(e)
+      }) flatMap { value: com.itiancai.passport.thrift.PassportResult =>
+        reply("login", seqid, Login.Result(success = Some(value)))
+      } rescue {
+        case e => Future.exception(e)
+      }
+    } catch {
+      case e: TProtocolException => {
+        iprot.readMessageEnd()
+        exception("login", seqid, TApplicationException.PROTOCOL_ERROR, e.getMessage)
+      }
+      case e: Exception => Future.exception(e)
+    }
+  })
+  addFunction("userInfo", { (iprot: TProtocol, seqid: Int) =>
+    try {
+      val args = UserInfo.Args.decode(iprot)
+      iprot.readMessageEnd()
+      (try {
+        iface.userInfo(args.userId)
+      } catch {
+        case e: Exception => Future.exception(e)
+      }) flatMap { value: com.itiancai.passport.thrift.PassportResult =>
+        reply("userInfo", seqid, UserInfo.Result(success = Some(value)))
+      } rescue {
+        case e => Future.exception(e)
+      }
+    } catch {
+      case e: TProtocolException => {
+        iprot.readMessageEnd()
+        exception("userInfo", seqid, TApplicationException.PROTOCOL_ERROR, e.getMessage)
       }
       case e: Exception => Future.exception(e)
     }
