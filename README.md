@@ -20,20 +20,23 @@ http://diwakergupta.github.io/thrift-missing-guide
 如何生成文件
 
 1. 默认读取`src/thrift`目录中的文件
-2. 生成文件位置为当前target/scala-{版本号}/src_manager
-3. 生成使用 项目名/compile:scroogeGen, 例如：thriftExample/compile:scroogeGen，不会引起编译冲突
-
-
-###如何自动重启
-* 项目在sbt中键入~reStart即可监测当前所有文件改动，自行重启.
+2. 生成文件位置为当前`target/scala-{版本号}/src_manager`
+3. 生成使用`${项目名}/compile:scroogeGen`, 例如：`thriftExample/compile:scroogeGen`，不会引起编译冲突
 
 
 
-###如何启动调试
-在终端命令行中键入sbt -jvm-debug 5005
-相当于开启了5005的debug窗口，那么在intellij中开启remote调试即可debug
+
+###如何热记载并启动调试
+* 使用resolver插件
+    在sbt中键入~reStart即可监测当前所有文件改动，自行重启.
+    在`build.sbt`的setting中增加 `Revolver.enableDebugging(port = 5005, suspend = true),`
+* 使用jrebel热加载
+
+
+
 
 ###环境配置（待完成）
+程序启动时候需要加javaOptions
 1. 系统自动读取-denv=dev的配置项目，如果没有默认为dev环境.
 2. config目录下将有dev,test,pre-test,production
 3. 注意将envirment的process进行扩展，默认读取config目录下的所有相关配置.

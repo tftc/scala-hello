@@ -6,7 +6,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date %.-3level traceId:%-25X{traceId}  %class.%M\(\) %L %logger{0} %msg%n</pattern>
+            <pattern>%date %level [%X{traceId}] %class.%M\(\) %L  %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -21,7 +21,7 @@
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%date %.-3level %-16X{traceId} %-25logger{0} %msg%n</pattern>
+            <pattern>%date %level %-16X{traceId} %-25logger{0} %msg%n</pattern>
         </encoder>
     </appender>
 

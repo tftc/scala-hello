@@ -1,5 +1,6 @@
 import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys._
+import spray.revolver.RevolverPlugin.Revolver._
 
 
 lazy val buildSettings = Seq(
@@ -15,6 +16,7 @@ lazy val versions = new {
   val mybatis = "3.3.0"
   val spring = "3.2.15.RELEASE"
   val mybatisSpring = "1.2.3"
+  val slf4j = "1.7.12"
 }
 
 lazy val compilerOptions = scalacOptions ++= Seq(
@@ -82,24 +84,26 @@ lazy val thriftExample = (project in file("thrift-example"))
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.twitter" %% "scrooge-core" % "4.0.0",
-      "com.twitter" %% "finagle-thrift" % "6.28.0",
+      "com.twitter" %% "scrooge-core" % "4.2.0",
+      "com.twitter" %% "finagle-thrift" % versions.finagle,
+      "com.twitter.inject" %% "inject-core" % "2.0.1",
       "org.mybatis" % "mybatis" % versions.mybatis,
       "org.mybatis" % "mybatis-spring" % versions.mybatisSpring,
       "org.springframework" % "spring-context" % versions.spring,
       "redis.clients" % "jedis" % "2.7.2",
       "joda-time" % "joda-time" % "2.8.2",
       "ch.qos.logback" % "logback-classic" % versions.logback,
-      "org.slf4j" % "jcl-over-slf4j" % "1.7.12"
+      "org.slf4j" % "jcl-over-slf4j" % versions.slf4j,
+      "org.slf4j" % "jul-to-slf4j" % versions.slf4j
     )
   )
-  .disablePlugins(ScroogeSBT)
+  .enablePlugins(ScroogeSBT)
   //hot reload
   .settings(Revolver.settings:_*)
   .settings(
-
     mainClass in Revolver.reStart := Some("com.itiancai.passport.thrift.TestServer"),
-    javaOptions in Revolver.reStart += "-Dgalaxias.env=dev",
+    javaOptions in Revolver.reStart +=  "-Dgalaxias.env=dev",
+    Revolver.enableDebugging(port = 5005, suspend = true),
     logLevel := sbt.Level.Info
   )
   .settings(
