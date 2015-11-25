@@ -10,13 +10,12 @@ import com.twitter.finagle.Service
 import com.twitter.util.Future
 
 
-object TestServer extends ThriftServer {
+object TestServer extends ThriftServer{
 
   override protected def configureThrift(router: ThriftRouter): Unit = {
     router.filter[LoggingMDCFilter[ThriftRequest,Any]]
     .filter[TraceIdMDCFilter[ThriftRequest, Any]]
     .add[PassportServiceImpl](PassporServiceFilterCreator.create)
-
   }
 
   override  protected def configureSpring(): ContextConfig = {
@@ -26,7 +25,7 @@ object TestServer extends ThriftServer {
       }
 
       override def scanPackageName(): Seq[String] = {
-        Seq("com.itiancai")
+        Seq("com.itiancai.passport")
       }
     }
   }
