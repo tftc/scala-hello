@@ -1,6 +1,4 @@
 import sbt.Keys._
-import sbtunidoc.Plugin.UnidocKeys._
-import spray.revolver.RevolverPlugin.Revolver._
 
 
 lazy val buildSettings = Seq(
@@ -37,6 +35,52 @@ lazy val compilerOptions = scalacOptions ++= Seq(
 )
 
 
+
+lazy val publishSettings = Seq(
+  publishMavenStyle := true,
+  publishArtifact := true,
+  publishArtifact in Test := false,
+  publishArtifact in (Compile, packageDoc) := true,
+  publishArtifact in (Test, packageDoc) := true,
+  pomIncludeRepository := { _ => false },
+  publishTo := {
+    val nexus = "http://123.57.227.107:8086/nexus/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  },
+  //licenses := Seq("Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+  //homepage := Some(url("https://github.com/twitter/finatra")),
+  autoAPIMappings := true,
+  //apiURL := Some(url("https://twitter.github.io/finatra/docs/")),
+//  pomExtra := (
+//    <scm>
+//      <url>git://github.com/twitter/finatra.git</url>
+//      <connection>scm:git://github.com/twitter/finatra.git</connection>
+//    </scm>
+//      <developers>
+//        <developer>
+//          <id>twitter</id>
+//          <name>Twitter Inc.</name>
+//          <url>https://www.twitter.com/</url>
+//        </developer>
+//      </developers>
+//    ),
+  pomPostProcess := { (node: scala.xml.Node) =>
+    val rule = new scala.xml.transform.RewriteRule {
+      override def transform(n: scala.xml.Node): scala.xml.NodeSeq =
+        n.nameToString(new StringBuilder()).toString() match {
+          case "dependency" if (n \ "groupId").text.trim == "org.scoverage" => Nil
+          case _ => n
+        }
+    }
+
+    new scala.xml.transform.RuleTransformer(rule).transform(node).head
+  }
+)
+
+
 val baseSettings = Seq(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % versions.logback % "test",
@@ -55,12 +99,14 @@ val baseSettings = Seq(
   javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 )
 
-lazy val cubeBuildSettings = baseSettings ++ buildSettings  ++ Seq(
-  organization := "com.itiancai"
+
+
+
+lazy val commonSettings = baseSettings ++ publishSettings ++ buildSettings ++ unidocSettings
+
+lazy val galaxySettings = commonSettings ++ Seq(
+  organization := "com.itiancai.galaxy"
 )
-
-
-lazy val commonSettings = baseSettings ++ buildSettings ++ unidocSettings
 
 lazy val root = (project in file(".")).settings(commonSettings: _*)
   .aggregate(
@@ -81,7 +127,8 @@ lazy val finatraExample = (project in file("finatra-example"))
 
 
 lazy val thriftExample = (project in file("thrift-example"))
-  .settings(commonSettings: _*)
+  .settings(name :="galaxy")
+  .settings(galaxySettings: _*)
   .settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "scrooge-core" % "4.2.0",
@@ -95,7 +142,8 @@ lazy val thriftExample = (project in file("thrift-example"))
       "ch.qos.logback" % "logback-classic" % versions.logback,
       "org.slf4j" % "jcl-over-slf4j" % versions.slf4j,
       "org.slf4j" % "jul-to-slf4j" % versions.slf4j
-    )
+    ),
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
   .enablePlugins(ScroogeSBT)
   //hot reload
