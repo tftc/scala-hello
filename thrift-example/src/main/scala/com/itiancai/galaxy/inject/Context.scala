@@ -18,7 +18,7 @@ private[inject] object ContextHolder {
   }
 
   private[inject] def config(configure: ContextConfig) = {
-    appContext.scan(configure.scanPackageName():_*)
+    appContext.scan(configure.scanPackageName() ++ Seq("com.itiancai.galaxy"): _*)
     appContext.register(configure.registerClass():_*)
     this
   }
