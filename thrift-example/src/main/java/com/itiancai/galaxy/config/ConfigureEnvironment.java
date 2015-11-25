@@ -46,7 +46,6 @@ public class ConfigureEnvironment extends StandardEnvironment {
                                             Collections.unmodifiableMap(systemEnv)));
 
     String resourceSourcePath = this.resolvePlaceholders(CONFIG_PATH);
-    logger.info("load resource path : [" + resourceSourcePath + "]");
     MutablePropertySources
         envPropertySources = this.getPropertySources();
     ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -57,12 +56,11 @@ public class ConfigureEnvironment extends StandardEnvironment {
         envPropertySources.addLast(new ResourcePropertySource(resource));
       }
     } catch (IOException e) {
-      logger.error("load config failure, config path: [" + resourceSourcePath + "]", e);
+      logger.error("load config resource failure, path: [" + resourceSourcePath + "]", e);
       throw new RuntimeException(e);
     }
+    logger.info("load config resource successful, path : [" + resourceSourcePath + "]");
 
-//    logger.info("server.port={}, server.port2={}", this.getProperty("server.port"), this.getProperty(
-//            "server.port2"));
   }
 
 
